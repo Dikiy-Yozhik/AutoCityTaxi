@@ -2,6 +2,8 @@ package ru.mystudent.taxi.service;
 
 import ru.mystudent.taxi.model.RideRequest;
 import ru.mystudent.taxi.model.TaxiStatus;
+import ru.mystudent.taxi.stats.StatisticsCollector;
+import ru.mystudent.taxi.util.FareCalculator;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -17,9 +19,9 @@ public class Dispatcher implements Runnable, DispatcherCallback {
     private final List<TaxiWorker> taxis;
     private final DispatchStrategy strategy;
     private final ReentrantLock selectionLock;
+    private final StatisticsCollector statisticsCollector; // Добавлено
     private volatile boolean running = true;
     
-    // Для статистики (временно, будет перенесено в шаге 8)
     private int totalAssignedRides = 0;
     private int failedAssignments = 0;
     
@@ -28,11 +30,13 @@ public class Dispatcher implements Runnable, DispatcherCallback {
      */
     public Dispatcher(BlockingQueue<RideRequest> requestQueue, 
                      List<TaxiWorker> taxis, 
-                     DispatchStrategy strategy) {
+                     DispatchStrategy strategy,
+                     StatisticsCollector statisticsCollector) { // Добавлен параметр
         this.requestQueue = requestQueue;
         this.taxis = taxis;
         this.strategy = strategy;
         this.selectionLock = new ReentrantLock();
+        this.statisticsCollector = statisticsCollector;
     }
     
     /**
@@ -127,14 +131,32 @@ public class Dispatcher implements Runnable, DispatcherCallback {
     @Override
     public void onRideCompleted(TaxiWorker taxi, RideRequest ride, 
                                double distance, double fare, long waitTimeMillis) {
-        // Пока просто логируем, полная реализация будет в шаге 8
-        System.out.println("Диспетчер: такси " + taxi.getId() + 
-                         " завершило поездку #" + ride.getId() + 
-                         ", расстояние: " + String.format("%.2f", distance) +
-                         ", ожидание: " + waitTimeMillis + " мс");
+        // Рассчитываем время поездки
+        long rideTimeMillis = System.currentTimeMillis() - 
+                            (ride.getCreatedAtMillis() + waitTimeMillis);
         
-        // Такси снова свободно (статус уже установлен в TaxiWorker)
-        // Здесь можно добавить дополнительную логику при необходимости
+        // Рассчитываем стоимость поездки, если не передана
+        if (fare <= 0 && taxi.getType() != null) {
+            fare = FareCalculator.calculateFare(taxi.getType(), distance);
+        }
+        
+        // Записываем статистику
+        if (statisticsCollector != null) {
+            statisticsCollector.recordCompletedRide(
+                taxi.getId(),
+                taxi.getType(),
+                distance,
+                fare,
+                rideTimeMillis,
+                waitTimeMillis
+            );
+        }
+        
+        System.out.printf("Диспетчер: такси %d завершило поездку #%d, " +
+                         "расстояние: %.2f, стоимость: %.2f, " +
+                         "ожидание: %d мс, время поездки: %d мс%n",
+                         taxi.getId(), ride.getId(), distance, fare,
+                         waitTimeMillis, rideTimeMillis);
     }
     
     // Геттеры

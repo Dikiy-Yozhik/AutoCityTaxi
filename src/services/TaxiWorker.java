@@ -90,16 +90,21 @@ public class TaxiWorker implements Runnable {
     /**
      * Обрабатывает одну поездку
      */
+    // В метод processRide добавляем расчет времени ожидания
     private void processRide(RideRequest request) {
         try {
+            // Рассчитываем время ожидания (от создания заказа до начала поездки)
+            long waitTimeMillis = System.currentTimeMillis() - request.getCreatedAtMillis();
+            
             // 1. Едем к клиенту
             System.out.println("Такси " + id + " едет к клиенту #" + request.getId() + 
-                             " из " + currentLocation + " в " + request.getPickup());
+                            " из " + currentLocation + " в " + request.getPickup() +
+                            " (ожидание: " + waitTimeMillis + " мс)");
             
             double distanceToPickup = currentLocation.distanceTo(request.getPickup());
             setStatus(TaxiStatus.TO_PICKUP);
             
-            // Имитируем поездку к клиенту (упрощенно - просто sleep)
+            // Имитируем поездку к клиенту
             long travelTimeToPickup = calculateTravelTime(distanceToPickup);
             Thread.sleep(travelTimeToPickup);
             
@@ -110,7 +115,7 @@ public class TaxiWorker implements Runnable {
             
             // 3. Едем к точке назначения
             System.out.println("Такси " + id + " везет клиента #" + request.getId() + 
-                             " из " + currentLocation + " в " + request.getDropoff());
+                            " из " + currentLocation + " в " + request.getDropoff());
             
             double rideDistance = request.getPickup().distanceTo(request.getDropoff());
             long rideTime = calculateTravelTime(rideDistance);
@@ -125,11 +130,15 @@ public class TaxiWorker implements Runnable {
             completedRides++;
             totalDistance += distanceToPickup + rideDistance;
             
-            // Уведомляем диспетчер (если callback установлен)
+            // Рассчитываем стоимость поездки
+            double totalDistance = distanceToPickup + rideDistance;
+            double fare = FareCalculator.calculateFare(type, totalDistance);
+            totalRevenue += fare;
+            
+            // Уведомляем диспетчер
             if (dispatcherCallback != null) {
-                // Пока используем заглушки для параметров (будет реализовано в шаге 8)
                 dispatcherCallback.onRideCompleted(this, request, 
-                    distanceToPickup + rideDistance, 0.0, 0);
+                    totalDistance, fare, waitTimeMillis);
             }
             
         } catch (InterruptedException e) {

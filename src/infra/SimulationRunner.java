@@ -18,12 +18,14 @@ import java.util.concurrent.TimeUnit;
 public class SimulationRunner {
     
     private final SimulationConfig config;
+    private final StatisticsCollector statisticsCollector; // Добавлено
     
     /**
      * Конструктор
      */
     public SimulationRunner(SimulationConfig config) {
         this.config = config;
+        this.statisticsCollector = new StatisticsCollector(); // Инициализируем сборщик статистики
     }
     
     /**
@@ -42,8 +44,8 @@ public class SimulationRunner {
         // 3. Создаем стратегию
         DispatchStrategy strategy = createStrategy(config.getStrategyType());
         
-        // 4. Создаем диспетчера
-        Dispatcher dispatcher = new Dispatcher(requestQueue, taxis, strategy);
+        // 4. Создаем диспетчера (передаем сборщик статистики)
+        Dispatcher dispatcher = new Dispatcher(requestQueue, taxis, strategy, statisticsCollector);
         
         // 5. Создаем генератор запросов
         RequestGenerator generator = new RequestGenerator(requestQueue, config);
@@ -82,7 +84,9 @@ public class SimulationRunner {
         stopSimulation(generator, dispatcher, taxis, executor);
         
         System.out.println("\n=== СИМУЛЯЦИЯ ЗАВЕРШЕНА ===");
-        printStatistics(dispatcher, taxis);
+        
+        // 10. Выводим полную статистику
+        statisticsCollector.printSummary();
     }
     
     /**
