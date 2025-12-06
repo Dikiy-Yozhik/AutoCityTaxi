@@ -19,7 +19,7 @@ public class Dispatcher implements Runnable, DispatcherCallback {
     private final List<TaxiWorker> taxis;
     private final DispatchStrategy strategy;
     private final ReentrantLock selectionLock;
-    private final StatisticsCollector statisticsCollector; // Добавлено
+    private final StatisticsCollector statisticsCollector;
     private volatile boolean running = true;
     
     private int totalAssignedRides = 0;
@@ -31,7 +31,7 @@ public class Dispatcher implements Runnable, DispatcherCallback {
     public Dispatcher(BlockingQueue<RideRequest> requestQueue, 
                      List<TaxiWorker> taxis, 
                      DispatchStrategy strategy,
-                     StatisticsCollector statisticsCollector) { // Добавлен параметр
+                     StatisticsCollector statisticsCollector) {
         this.requestQueue = requestQueue;
         this.taxis = taxis;
         this.strategy = strategy;
@@ -52,9 +52,9 @@ public class Dispatcher implements Runnable, DispatcherCallback {
                 // 1. Забираем заказ из общей очереди (блокирующая операция)
                 RideRequest request = requestQueue.take();
                 
-                // Проверяем, не poison pill ли это (если используем для остановки)
+                // Проверяем, не poison pill ли это
                 if (isPoisonPill(request)) {
-                    System.out.println("Диспетчер получил команду на остановку");
+                    System.out.println("Диспетчер получил poison pill. Завершение работы...");
                     break;
                 }
                 
@@ -88,6 +88,9 @@ public class Dispatcher implements Runnable, DispatcherCallback {
             }
         }
         
+        // Останавливаем такси перед завершением
+        stopAllTaxis();
+        
         System.out.println("Диспетчер остановлен. Назначено поездок: " + 
                          totalAssignedRides + ", не удалось назначить: " + failedAssignments);
     }
@@ -108,7 +111,17 @@ public class Dispatcher implements Runnable, DispatcherCallback {
      * Проверяет, является ли запрос poison pill'ом
      */
     private boolean isPoisonPill(RideRequest request) {
-        return request.getId() == -1; // ID poison pill из TaxiWorker
+        return request.getId() == -1; // ID poison pill
+    }
+    
+    /**
+     * Останавливает все такси
+     */
+    private void stopAllTaxis() {
+        System.out.println("Диспетчер останавливает все такси...");
+        for (TaxiWorker taxi : taxis) {
+            taxi.stop();
+        }
     }
     
     /**
@@ -116,13 +129,8 @@ public class Dispatcher implements Runnable, DispatcherCallback {
      */
     public void stop() {
         this.running = false;
-        // Отправляем poison pill в очередь для выхода из take()
-        try {
-            RideRequest poisonPill = new RideRequest(-1, null, null, 0, null);
-            requestQueue.put(poisonPill);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        // Прерываем ожидание в очереди
+        Thread.currentThread().interrupt();
     }
     
     /**

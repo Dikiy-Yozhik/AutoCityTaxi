@@ -18,6 +18,10 @@ public class RequestGenerator implements Runnable {
     private final Random random;
     private volatile boolean running = true;
     
+    // Poison pill для остановки диспетчера
+    public static final RideRequest DISPATCHER_POISON_PILL = 
+        new RideRequest(-1, null, null, 0, null);
+    
     /**
      * Конструктор генератора
      */
@@ -49,17 +53,17 @@ public class RequestGenerator implements Runnable {
                                  " (тип: " + request.getRequestedType() + ")");
                 
                 // Ждем перед генерацией следующего заказа
-                // Добавляем некоторую случайность к интервалу (±50%)
-                long interval = (long)(config.getMeanRequestIntervalMillis() * 
-                                    (0.5 + random.nextDouble()));
+                long interval = getNextInterval();
                 Thread.sleep(interval);
             }
         } catch (InterruptedException e) {
             System.err.println("Генератор запросов был прерван");
             Thread.currentThread().interrupt();
+        } finally {
+            // При завершении отправляем poison pill диспетчеру
+            sendPoisonPill();
+            System.out.println("Генератор запросов остановлен.");
         }
-        
-        System.out.println("Генератор запросов остановлен.");
     }
     
     /**
@@ -93,6 +97,27 @@ public class RequestGenerator implements Runnable {
         double y = config.getCityMinY() + 
                   random.nextDouble() * (config.getCityMaxY() - config.getCityMinY());
         return new Point(x, y);
+    }
+    
+    /**
+     * Получает следующий интервал с некоторой случайностью
+     */
+    private long getNextInterval() {
+        // Добавляем некоторую случайность к интервалу (±50%)
+        return (long)(config.getMeanRequestIntervalMillis() * 
+                    (0.5 + random.nextDouble()));
+    }
+    
+    /**
+     * Отправляет poison pill в очередь для остановки диспетчера
+     */
+    private void sendPoisonPill() {
+        try {
+            requestQueue.put(DISPATCHER_POISON_PILL);
+            System.out.println("Генератор отправил poison pill диспетчеру");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
     
     /**
