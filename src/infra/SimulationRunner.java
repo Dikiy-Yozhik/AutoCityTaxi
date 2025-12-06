@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Запускает и управляет симуляцией
@@ -26,11 +29,9 @@ public class SimulationRunner {
     /**
      * Запускает симуляцию
      */
-    public void runSimulation() {
-        System.out.println("Запуск симуляции с конфигурацией: " + config);
-        
-        // TODO: Реализовать полную логику симуляции (будет в шаге 9)
-        // Пока просто создаем основные компоненты
+    public void runSimulation() throws InterruptedException {
+        System.out.println("=== ЗАПУСК СИМУЛЯЦИИ ===");
+        System.out.println("Конфигурация: " + config);
         
         // 1. Создаем очередь заявок
         BlockingQueue<RideRequest> requestQueue = new LinkedBlockingQueue<>();
@@ -52,12 +53,44 @@ public class SimulationRunner {
             taxi.setDispatcherCallback(dispatcher);
         }
         
-        System.out.println("Симуляция инициализирована. " + 
-                          taxis.size() + " такси, стратегия: " + strategy.getName());
+        System.out.println("\nИнициализация завершена:");
+        System.out.println("- Такси: " + taxis.size() + " единиц");
+        System.out.println("- Стратегия: " + strategy.getName());
+        System.out.println("- Длительность: " + config.getSimulationDurationSeconds() + " сек");
+        System.out.println();
         
-        // TODO: Запуск потоков, ожидание, остановка (будет в шаге 9)
+        // 7. Запускаем потоки
+        ExecutorService executor = Executors.newFixedThreadPool(taxis.size() + 2);
         
-        System.out.println("Симуляция завершена.");
+        // Запускаем такси
+        for (TaxiWorker taxi : taxis) {
+            executor.submit(taxi);
+        }
+        
+        // Запускаем диспетчера и генератор
+        executor.submit(dispatcher);
+        executor.submit(generator);
+        
+        System.out.println("Все потоки запущены. Симуляция работает...\n");
+        
+        // 8. Ждем указанное время
+        Thread.sleep(config.getSimulationDurationSeconds() * 1000L);
+        
+        // 9. Останавливаем симуляцию
+        System.out.println("\nВремя симуляции истекло. Останавливаем...");
+        stopSimulation(generator, dispatcher, taxis, executor);
+        
+        System.out.println("\n=== СИМУЛЯЦИЯ ЗАВЕРШЕНА ===");
+        System.out.println("Диспетчер назначил поездок: " + dispatcher.getTotalAssignedRides());
+        System.out.println("Не удалось назначить: " + dispatcher.getFailedAssignments());
+        
+        // Выводим статистику по такси
+        System.out.println("\nСтатистика по такси:");
+        for (TaxiWorker taxi : taxis) {
+            System.out.println("Такси " + taxi.getId() + " (" + taxi.getType() + 
+                             "): " + taxi.getCompletedRides() + " поездок, " +
+                             "пробег: " + String.format("%.2f", taxi.getTotalDistance()));
+        }
     }
     
     /**
@@ -66,14 +99,12 @@ public class SimulationRunner {
     private List<TaxiWorker> createTaxis() {
         List<TaxiWorker> taxis = new ArrayList<>();
         
-        // Для простоты создаем такси разных типов
         TaxiType[] types = TaxiType.values();
         
         for (int i = 0; i < config.getNumberOfTaxis(); i++) {
             long taxiId = i + 1;
             TaxiType type = types[i % types.length];
             
-            // Начальная позиция такси - случайная точка в городе
             double x = config.getCityMinX() + 
                       Math.random() * (config.getCityMaxX() - config.getCityMinX());
             double y = config.getCityMinY() + 
@@ -91,19 +122,19 @@ public class SimulationRunner {
      * Создает стратегию по названию
      */
     private DispatchStrategy createStrategy(String strategyName) {
-        // TODO: Реализовать создание конкретных стратегий (будет в шаге 7)
-        // Пока возвращаем заглушку
-        return new DispatchStrategy() {
-            @Override
-            public TaxiWorker selectTaxi(List<TaxiWorker> taxis, RideRequest request) {
-                return null;
-            }
-            
-            @Override
-            public String getName() {
-                return "Заглушка (не реализовано)";
-            }
-        };
+        switch (strategyName.toLowerCase()) {
+            case "nearest":
+            case "ближайшее":
+                return new NearestTaxiStrategy();
+            case "leastloaded":
+            case "наименеезагруженное":
+                // Будет реализовано в шаге 7
+                return new NearestTaxiStrategy(); // временно используем Nearest
+            default:
+                System.out.println("Неизвестная стратегия '" + strategyName + 
+                                 "'. Используется NearestTaxiStrategy по умолчанию.");
+                return new NearestTaxiStrategy();
+        }
     }
     
     /**
@@ -111,13 +142,24 @@ public class SimulationRunner {
      */
     private void stopSimulation(RequestGenerator generator, 
                                Dispatcher dispatcher, 
-                               List<TaxiWorker> taxis) {
-        // TODO: Реализовать корректную остановку (будет в шаге 9)
-        System.out.println("Остановка симуляции...");
-        
+                               List<TaxiWorker> taxis,
+                               ExecutorService executor) throws InterruptedException {
+        // Останавливаем генератор
         generator.stop();
+        
+        // Останавливаем диспетчер
         dispatcher.stop();
         
-        // TODO: Остановить такси через poison pill
+        // Останавливаем такси
+        for (TaxiWorker taxi : taxis) {
+            taxi.stop();
+        }
+        
+        // Ждем завершения всех потоков
+        executor.shutdown();
+        if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            System.err.println("Не все потоки завершились корректно");
+            executor.shutdownNow();
+        }
     }
 }
