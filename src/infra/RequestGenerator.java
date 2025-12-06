@@ -4,6 +4,7 @@ import ru.mystudent.taxi.model.*;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Random;
 
 /**
  * Генератор заявок на поездки
@@ -14,6 +15,7 @@ public class RequestGenerator implements Runnable {
     private final BlockingQueue<RideRequest> requestQueue;
     private final SimulationConfig config;
     private final AtomicLong requestIdCounter;
+    private final Random random;
     private volatile boolean running = true;
     
     /**
@@ -23,6 +25,7 @@ public class RequestGenerator implements Runnable {
         this.requestQueue = requestQueue;
         this.config = config;
         this.requestIdCounter = new AtomicLong(1);
+        this.random = new Random();
     }
     
     /**
@@ -33,19 +36,63 @@ public class RequestGenerator implements Runnable {
         System.out.println("Генератор запросов запущен. Интервал: " + 
                           config.getMeanRequestIntervalMillis() + " мс");
         
-        // TODO: Реализовать генерацию запросов (будет в шаге 5)
-        while (running) {
-            try {
-                // Временная заглушка
-                Thread.sleep(config.getMeanRequestIntervalMillis());
-                System.out.println("Генератор: сгенерирован запрос #" + requestIdCounter.getAndIncrement());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+        try {
+            while (running) {
+                // Генерируем новый заказ
+                RideRequest request = generateRequest();
+                
+                // Помещаем в очередь
+                requestQueue.put(request);
+                System.out.println("Сгенерирован заказ #" + request.getId() + 
+                                 " от " + request.getPickup() + 
+                                 " до " + request.getDropoff() +
+                                 " (тип: " + request.getRequestedType() + ")");
+                
+                // Ждем перед генерацией следующего заказа
+                // Добавляем некоторую случайность к интервалу (±50%)
+                long interval = (long)(config.getMeanRequestIntervalMillis() * 
+                                    (0.5 + random.nextDouble()));
+                Thread.sleep(interval);
             }
+        } catch (InterruptedException e) {
+            System.err.println("Генератор запросов был прерван");
+            Thread.currentThread().interrupt();
         }
         
         System.out.println("Генератор запросов остановлен.");
+    }
+    
+    /**
+     * Генерирует случайный заказ на поездку
+     */
+    private RideRequest generateRequest() {
+        long id = requestIdCounter.getAndIncrement();
+        
+        // Генерируем случайные точки в пределах города
+        Point pickup = generateRandomPoint();
+        Point dropoff = generateRandomPoint();
+        
+        // Убедимся, что точки не совпадают
+        while (pickup.distanceTo(dropoff) < 1.0) {
+            dropoff = generateRandomPoint();
+        }
+        
+        // Выбираем случайный тип такси
+        TaxiType[] allTypes = TaxiType.values();
+        TaxiType requestedType = allTypes[random.nextInt(allTypes.length)];
+        
+        return new RideRequest(id, pickup, dropoff, System.currentTimeMillis(), requestedType);
+    }
+    
+    /**
+     * Генерирует случайную точку в пределах города
+     */
+    private Point generateRandomPoint() {
+        double x = config.getCityMinX() + 
+                  random.nextDouble() * (config.getCityMaxX() - config.getCityMinX());
+        double y = config.getCityMinY() + 
+                  random.nextDouble() * (config.getCityMaxY() - config.getCityMinY());
+        return new Point(x, y);
     }
     
     /**
