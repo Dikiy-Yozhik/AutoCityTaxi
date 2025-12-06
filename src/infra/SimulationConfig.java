@@ -9,7 +9,7 @@ public class SimulationConfig {
     private final int numberOfTaxis;
     private final int simulationDurationSeconds;
     private final long meanRequestIntervalMillis;
-    private final String strategyName;
+    private final StrategyType strategyType; // Изменено с String на StrategyType
     
     // Границы города для генерации координат
     private final double cityMinX;
@@ -26,7 +26,7 @@ public class SimulationConfig {
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
                           long meanRequestIntervalMillis, 
-                          String strategyName,
+                          StrategyType strategyType, // Изменено
                           double cityMinX, 
                           double cityMaxX, 
                           double cityMinY, 
@@ -35,7 +35,7 @@ public class SimulationConfig {
         this.numberOfTaxis = numberOfTaxis;
         this.simulationDurationSeconds = simulationDurationSeconds;
         this.meanRequestIntervalMillis = meanRequestIntervalMillis;
-        this.strategyName = strategyName;
+        this.strategyType = strategyType;
         this.cityMinX = cityMinX;
         this.cityMaxX = cityMaxX;
         this.cityMinY = cityMinY;
@@ -44,7 +44,46 @@ public class SimulationConfig {
     }
     
     /**
+     * Конструктор со строкой для стратегии (для обратной совместимости)
+     */
+    public SimulationConfig(int numberOfTaxis, 
+                          int simulationDurationSeconds, 
+                          long meanRequestIntervalMillis, 
+                          String strategyName, // Оставляем для обратной совместимости
+                          double cityMinX, 
+                          double cityMaxX, 
+                          double cityMinY, 
+                          double cityMaxY,
+                          double taxiSpeed) {
+        this(numberOfTaxis, 
+             simulationDurationSeconds, 
+             meanRequestIntervalMillis, 
+             StrategyType.fromCode(strategyName), // Конвертируем строку в enum
+             cityMinX, cityMaxX, cityMinY, cityMaxY, 
+             taxiSpeed);
+    }
+    
+    /**
      * Упрощенный конструктор с параметрами по умолчанию для города
+     */
+    public SimulationConfig(int numberOfTaxis, 
+                          int simulationDurationSeconds, 
+                          long meanRequestIntervalMillis, 
+                          StrategyType strategyType) {
+        this(numberOfTaxis, 
+             simulationDurationSeconds, 
+             meanRequestIntervalMillis, 
+             strategyType,
+             0.0,  // cityMinX
+             100.0, // cityMaxX
+             0.0,  // cityMinY
+             100.0, // cityMaxY
+             10.0  // taxiSpeed (10 единиц расстояния в секунду)
+        );
+    }
+    
+    /**
+     * Упрощенный конструктор со строкой (для обратной совместимости)
      */
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
@@ -53,13 +92,8 @@ public class SimulationConfig {
         this(numberOfTaxis, 
              simulationDurationSeconds, 
              meanRequestIntervalMillis, 
-             strategyName,
-             0.0,  // cityMinX
-             100.0, // cityMaxX
-             0.0,  // cityMinY
-             100.0, // cityMaxY
-             10.0  // taxiSpeed (10 единиц расстояния в секунду)
-        );
+             StrategyType.fromCode(strategyName),
+             0.0, 100.0, 0.0, 100.0, 10.0);
     }
     
     // Геттеры для всех полей
@@ -76,8 +110,14 @@ public class SimulationConfig {
         return meanRequestIntervalMillis;
     }
     
+    // Новый геттер для StrategyType
+    public StrategyType getStrategyType() {
+        return strategyType;
+    }
+    
+    // Геттер для обратной совместимости (возвращает код стратегии)
     public String getStrategyName() {
-        return strategyName;
+        return strategyType.getCode();
     }
     
     public double getCityMinX() {
@@ -106,7 +146,7 @@ public class SimulationConfig {
                "numberOfTaxis=" + numberOfTaxis +
                ", simulationDurationSeconds=" + simulationDurationSeconds +
                ", meanRequestIntervalMillis=" + meanRequestIntervalMillis +
-               ", strategyName='" + strategyName + '\'' +
+               ", strategyType=" + strategyType +
                ", cityMinX=" + cityMinX +
                ", cityMaxX=" + cityMaxX +
                ", cityMinY=" + cityMinY +

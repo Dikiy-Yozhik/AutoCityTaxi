@@ -40,7 +40,7 @@ public class SimulationRunner {
         List<TaxiWorker> taxis = createTaxis();
         
         // 3. Создаем стратегию
-        DispatchStrategy strategy = createStrategy(config.getStrategyName());
+        DispatchStrategy strategy = createStrategy(config.getStrategyType());
         
         // 4. Создаем диспетчера
         Dispatcher dispatcher = new Dispatcher(requestQueue, taxis, strategy);
@@ -57,6 +57,7 @@ public class SimulationRunner {
         System.out.println("- Такси: " + taxis.size() + " единиц");
         System.out.println("- Стратегия: " + strategy.getName());
         System.out.println("- Длительность: " + config.getSimulationDurationSeconds() + " сек");
+        System.out.println("- Интервал запросов: " + config.getMeanRequestIntervalMillis() + " мс");
         System.out.println();
         
         // 7. Запускаем потоки
@@ -81,16 +82,7 @@ public class SimulationRunner {
         stopSimulation(generator, dispatcher, taxis, executor);
         
         System.out.println("\n=== СИМУЛЯЦИЯ ЗАВЕРШЕНА ===");
-        System.out.println("Диспетчер назначил поездок: " + dispatcher.getTotalAssignedRides());
-        System.out.println("Не удалось назначить: " + dispatcher.getFailedAssignments());
-        
-        // Выводим статистику по такси
-        System.out.println("\nСтатистика по такси:");
-        for (TaxiWorker taxi : taxis) {
-            System.out.println("Такси " + taxi.getId() + " (" + taxi.getType() + 
-                             "): " + taxi.getCompletedRides() + " поездок, " +
-                             "пробег: " + String.format("%.2f", taxi.getTotalDistance()));
-        }
+        printStatistics(dispatcher, taxis);
     }
     
     /**
@@ -119,22 +111,27 @@ public class SimulationRunner {
     }
     
     /**
-     * Создает стратегию по названию
+     * Создает стратегию по типу (новая версия с enum)
      */
-    private DispatchStrategy createStrategy(String strategyName) {
-        switch (strategyName.toLowerCase()) {
-            case "nearest":
-            case "ближайшее":
+    private DispatchStrategy createStrategy(StrategyType strategyType) {
+        switch (strategyType) {
+            case NEAREST:
                 return new NearestTaxiStrategy();
-            case "leastloaded":
-            case "наименеезагруженное":
-                // Будет реализовано в шаге 7
-                return new NearestTaxiStrategy(); // временно используем Nearest
+            case LEAST_LOADED:
+                return new LeastLoadedTaxiStrategy();
             default:
-                System.out.println("Неизвестная стратегия '" + strategyName + 
+                System.out.println("Неизвестный тип стратегии '" + strategyType + 
                                  "'. Используется NearestTaxiStrategy по умолчанию.");
                 return new NearestTaxiStrategy();
         }
+    }
+    
+    /**
+     * Создает стратегию по названию (старая версия для обратной совместимости)
+     */
+    private DispatchStrategy createStrategy(String strategyName) {
+        StrategyType type = StrategyType.fromCode(strategyName);
+        return createStrategy(type);
     }
     
     /**
@@ -160,6 +157,45 @@ public class SimulationRunner {
         if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
             System.err.println("Не все потоки завершились корректно");
             executor.shutdownNow();
+        }
+    }
+    
+    /**
+     * Выводит статистику по завершению симуляции
+     */
+    private void printStatistics(Dispatcher dispatcher, List<TaxiWorker> taxis) {
+        System.out.println("Диспетчер назначил поездок: " + dispatcher.getTotalAssignedRides());
+        System.out.println("Не удалось назначить: " + dispatcher.getFailedAssignments());
+        
+        // Подсчитываем общую статистику
+        int totalCompletedRides = 0;
+        double totalDistance = 0.0;
+        
+        System.out.println("\nСтатистика по такси:");
+        System.out.println("ID  | Тип       | Поездки | Пробег   | Статус");
+        System.out.println("----+-----------+---------+----------+-----------");
+        
+        for (TaxiWorker taxi : taxis) {
+            totalCompletedRides += taxi.getCompletedRides();
+            totalDistance += taxi.getTotalDistance();
+            
+            System.out.printf("%-3d | %-9s | %-7d | %-8.2f | %s%n",
+                taxi.getId(),
+                taxi.getType(),
+                taxi.getCompletedRides(),
+                taxi.getTotalDistance(),
+                taxi.getStatus());
+        }
+        
+        System.out.println("\nОбщая статистика:");
+        System.out.println("Всего выполнено поездок: " + totalCompletedRides);
+        System.out.println("Общий пробег: " + String.format("%.2f", totalDistance));
+        
+        // Средняя загрузка такси
+        if (taxis.size() > 0) {
+            double avgRidesPerTaxi = (double) totalCompletedRides / taxis.size();
+            System.out.println("Средняя загрузка такси: " + 
+                             String.format("%.2f", avgRidesPerTaxi) + " поездок");
         }
     }
 }
