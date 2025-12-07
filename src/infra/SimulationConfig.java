@@ -1,32 +1,22 @@
 package infra;
 
-/**
- * Конфигурация симуляции
- */
 public class SimulationConfig {
-    
-    // Параметры симуляции
     private final int numberOfTaxis;
     private final int simulationDurationSeconds;
     private final long meanRequestIntervalMillis;
-    private final StrategyType strategyType; // Изменено с String на StrategyType
+    private final StrategyType strategyType; 
     
-    // Границы города для генерации координат
     private final double cityMinX;
     private final double cityMaxX;
     private final double cityMinY;
     private final double cityMaxY;
     
-    // Скорость движения (единиц расстояния в секунду)
     private final double taxiSpeed;
     
-    /**
-     * Конструктор со всеми параметрами
-     */
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
                           long meanRequestIntervalMillis, 
-                          StrategyType strategyType, // Изменено
+                          StrategyType strategyType, 
                           double cityMinX, 
                           double cityMaxX, 
                           double cityMinY, 
@@ -43,13 +33,10 @@ public class SimulationConfig {
         this.taxiSpeed = taxiSpeed;
     }
     
-    /**
-     * Конструктор со строкой для стратегии (для обратной совместимости)
-     */
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
                           long meanRequestIntervalMillis, 
-                          String strategyName, // Оставляем для обратной совместимости
+                          String strategyName, 
                           double cityMinX, 
                           double cityMaxX, 
                           double cityMinY, 
@@ -58,14 +45,11 @@ public class SimulationConfig {
         this(numberOfTaxis, 
              simulationDurationSeconds, 
              meanRequestIntervalMillis, 
-             StrategyType.fromCode(strategyName), // Конвертируем строку в enum
+             StrategyType.fromCode(strategyName), 
              cityMinX, cityMaxX, cityMinY, cityMaxY, 
              taxiSpeed);
     }
     
-    /**
-     * Упрощенный конструктор с параметрами по умолчанию для города
-     */
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
                           long meanRequestIntervalMillis, 
@@ -74,17 +58,14 @@ public class SimulationConfig {
              simulationDurationSeconds, 
              meanRequestIntervalMillis, 
              strategyType,
-             0.0,  // cityMinX
-             100.0, // cityMaxX
-             0.0,  // cityMinY
-             100.0, // cityMaxY
-             10.0  // taxiSpeed (10 единиц расстояния в секунду)
+             0.0,  
+             100.0, 
+             0.0,  
+             100.0, 
+             10.0  
         );
     }
     
-    /**
-     * Упрощенный конструктор со строкой (для обратной совместимости)
-     */
     public SimulationConfig(int numberOfTaxis, 
                           int simulationDurationSeconds, 
                           long meanRequestIntervalMillis, 
@@ -96,7 +77,7 @@ public class SimulationConfig {
              0.0, 100.0, 0.0, 100.0, 10.0);
     }
     
-    // Геттеры для всех полей
+    // =========== Геттеры для всех полей ================
     
     public int getNumberOfTaxis() {
         return numberOfTaxis;
@@ -110,12 +91,10 @@ public class SimulationConfig {
         return meanRequestIntervalMillis;
     }
     
-    // Новый геттер для StrategyType
     public StrategyType getStrategyType() {
         return strategyType;
     }
     
-    // Геттер для обратной совместимости (возвращает код стратегии)
     public String getStrategyName() {
         return strategyType.getCode();
     }

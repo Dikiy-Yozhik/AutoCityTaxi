@@ -5,9 +5,7 @@ import models.TaxiStatus;
 
 import java.util.List;
 
-/**
- * Стратегия выбора наименее загруженного такси
- */
+
 public class LeastLoadedTaxiStrategy implements DispatchStrategy {
     
     @Override
@@ -39,7 +37,7 @@ public class LeastLoadedTaxiStrategy implements DispatchStrategy {
                 minCompletedRides = completedRides;
                 leastLoadedTaxi = taxi;
             }
-            // Если загрузка одинаковая, выбираем ближайшее (опциональное улучшение)
+            // Если загрузка одинаковая, выбираем ближайшее
             else if (completedRides == minCompletedRides) {
                 double currentDistance = leastLoadedTaxi.getCurrentLocation()
                     .distanceTo(request.getPickupLocation());
@@ -54,17 +52,13 @@ public class LeastLoadedTaxiStrategy implements DispatchStrategy {
         
         return leastLoadedTaxi;
     }
-    
-    /**
-     * Проверяет, подходит ли такси для выполнения заказа
-     */
+ 
     private boolean isTaxiSuitableForRequest(TaxiWorker taxi, RideRequest request) {
         if (request.getRequestedType() == null) {
             return true; // Если тип не указан, подходит любое такси
         }
         
-        // Такси должно быть того же или выше класса
-        return taxi.getType().ordinal() >= request.getRequestedType().ordinal();
+        return taxi.getType().ordinal() == request.getRequestedType().ordinal();
     }
     
     @Override

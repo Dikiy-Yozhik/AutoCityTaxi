@@ -12,25 +12,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Запускает и управляет симуляцией
- */
 public class SimulationRunner {
     
     private final SimulationConfig config;
     private final StatisticsCollector statisticsCollector;
-    
-    /**
-     * Конструктор
-     */
+
     public SimulationRunner(SimulationConfig config) {
         this.config = config;
         this.statisticsCollector = new StatisticsCollector();
     }
     
-    /**
-     * Запускает симуляцию
-     */
     public void runSimulation() {
         System.out.println("=== ЗАПУСК СИМУЛЯЦИИ ===");
         System.out.println("Конфигурация: " + config);
@@ -92,9 +83,6 @@ public class SimulationRunner {
         }
     }
     
-    /**
-     * Корректно завершает работу ExecutorService
-     */
     private void shutdownExecutor(ExecutorService executor) {
         try {
             System.out.println("Запрашиваем завершение потоков...");
@@ -121,10 +109,7 @@ public class SimulationRunner {
             Thread.currentThread().interrupt();
         }
     }
-    
-    /**
-     * Создает список такси
-     */
+
     private List<TaxiWorker> createTaxis() {
         List<TaxiWorker> taxis = new ArrayList<>();
         
@@ -147,9 +132,6 @@ public class SimulationRunner {
         return taxis;
     }
     
-    /**
-     * Создает стратегию по типу
-     */
     private DispatchStrategy createStrategy(StrategyType strategyType) {
         switch (strategyType) {
             case NEAREST:

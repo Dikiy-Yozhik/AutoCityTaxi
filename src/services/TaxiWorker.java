@@ -6,12 +6,9 @@ import util.FareCalculator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * Класс, представляющий такси как отдельный поток выполнения
- */
+
 public class TaxiWorker implements Runnable {
     
-    // Поля класса
     private final long id;
     private final TaxiType type;
     private Point currentLocation;
@@ -19,7 +16,6 @@ public class TaxiWorker implements Runnable {
     private final BlockingQueue<RideRequest> personalQueue;
     private DispatcherCallback dispatcherCallback;
     
-    // Статистические поля
     private int completedRides = 0;
     private double totalDistance = 0.0;
     private double totalRevenue = 0.0;
@@ -28,9 +24,7 @@ public class TaxiWorker implements Runnable {
     private static final RideRequest POISON_PILL = createPoisonPill();
     private volatile boolean running = true;
     
-    /**
-     * Конструктор такси
-     */
+
     public TaxiWorker(long id, TaxiType type, Point initialLocation) {
         this.id = id;
         this.type = type;
@@ -39,16 +33,10 @@ public class TaxiWorker implements Runnable {
         this.personalQueue = new LinkedBlockingQueue<>();
     }
     
-    /**
-     * Устанавливает обратный вызов к диспетчеру
-     */
     public void setDispatcherCallback(DispatcherCallback callback) {
         this.dispatcherCallback = callback;
     }
     
-    /**
-     * Назначает заказ этому такси
-     */
     public void assignRequest(RideRequest request) {
         try {
             personalQueue.put(request);
@@ -59,9 +47,7 @@ public class TaxiWorker implements Runnable {
         }
     }
     
-    /**
-     * Основной метод потока такси
-     */
+
     @Override
     public void run() {
         System.out.println("Такси " + id + " (" + type + ") запущено. Текущая позиция: " + currentLocation);
@@ -88,10 +74,7 @@ public class TaxiWorker implements Runnable {
         System.out.println("Такси " + id + " остановлено");
     }
     
-    /**
-     * Обрабатывает одну поездку
-     */
-    // В метод processRide добавляем расчет времени ожидания
+
     private void processRide(RideRequest request) {
         try {
             // Рассчитываем время ожидания (от создания заказа до начала поездки)
@@ -148,18 +131,12 @@ public class TaxiWorker implements Runnable {
         }
     }
     
-    /**
-     * Рассчитывает время поездки на основе расстояния
-     * (упрощенно - 1 секунда на 10 единиц расстояния)
-     */
+
     private long calculateTravelTime(double distance) {
         // В реальной реализации используем config.taxiSpeed
         return (long)(distance * 100); // 100 мс на единицу расстояния для быстрой симуляции
     }
     
-    /**
-     * Останавливает работу такси
-     */
     public void stop() {
         this.running = false;
         // Отправляем poison pill для выхода из BlockingQueue.take()
@@ -170,14 +147,11 @@ public class TaxiWorker implements Runnable {
         }
     }
     
-    /**
-     * Создает poison pill для graceful shutdown
-     */
     private static RideRequest createPoisonPill() {
         return RideRequest.createPoisonPill();
     }
     
-    // Геттеры и сеттеры (остаются без изменений)
+    // ================= Геттеры =================
     
     public long getId() {
         return id;
@@ -206,6 +180,8 @@ public class TaxiWorker implements Runnable {
     public double getTotalRevenue() {
         return totalRevenue;
     }
+
+    // ============== Сеттеры ===============
     
     public void setCurrentLocation(Point location) {
         this.currentLocation = location;

@@ -5,9 +5,7 @@ import models.TaxiStatus;
 
 import java.util.List;
 
-/**
- * Стратегия выбора ближайшего свободного такси
- */
+
 public class NearestTaxiStrategy implements DispatchStrategy {
     
     @Override
@@ -26,9 +24,7 @@ public class NearestTaxiStrategy implements DispatchStrategy {
                 continue;
             }
             
-            // Проверяем тип такси (если требуется)
-            // Можно добавить логику: заказ ECONOMY может взять любой тип,
-            // но заказ BUSINESS должен взять только BUSINESS
+            // Проверяем тип такси
             if (!isTaxiSuitableForRequest(taxi, request)) {
                 continue;
             }
@@ -45,19 +41,13 @@ public class NearestTaxiStrategy implements DispatchStrategy {
         return nearestTaxi;
     }
     
-    /**
-     * Проверяет, подходит ли такси для выполнения заказа
-     */
+
     private boolean isTaxiSuitableForRequest(TaxiWorker taxi, RideRequest request) {
         if (request.getRequestedType() == null) {
             return true; // Если тип не указан, подходит любое такси
         }
         
-        // Упрощенная логика: такси должно быть того же или выше класса
-        // ECONOMY -> ECONOMY, COMFORT, BUSINESS
-        // COMFORT -> COMFORT, BUSINESS
-        // BUSINESS -> BUSINESS
-        return taxi.getType().ordinal() >= request.getRequestedType().ordinal();
+        return taxi.getType().ordinal() == request.getRequestedType().ordinal();
     }
     
     @Override

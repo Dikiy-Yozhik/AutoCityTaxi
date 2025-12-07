@@ -1,8 +1,5 @@
 package infra;
 
-/**
- * Типы стратегий распределения заказов
- */
 public enum StrategyType {
     NEAREST("nearest", "Ближайшее такси"),
     LEAST_LOADED("leastloaded", "Наименее загруженное такси");
@@ -23,12 +20,9 @@ public enum StrategyType {
         return description;
     }
     
-    /**
-     * Получает StrategyType по строковому коду (регистронезависимо)
-     */
     public static StrategyType fromCode(String code) {
         if (code == null) {
-            return NEAREST; // значение по умолчанию
+            return NEAREST;
         }
         
         for (StrategyType type : values()) {

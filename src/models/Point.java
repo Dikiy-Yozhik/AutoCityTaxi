@@ -2,9 +2,7 @@ package models;
 
 import java.util.Objects;
 
-/**
- * Модель точки с координатами x и y в двумерном пространстве.
- */
+
 public class Point {
     private final double x;
     private final double y;
@@ -22,12 +20,7 @@ public class Point {
         return y;
     }
 
-    /**
-     * Вычисляет евклидово расстояние до другой точки.
-     * 
-     * @param other другая точка
-     * @return расстояние между точками
-     */
+    // Евклидово расстояние до точки
     public double distanceTo(Point other) {
         if (other == null) {
             throw new IllegalArgumentException("Другая точка не может быть null");

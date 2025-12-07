@@ -1,8 +1,6 @@
 package stats;
 
-/**
- * Статистика по одному такси
- */
+
 public class TaxiStats {
     
     private int completedRides;
@@ -19,9 +17,6 @@ public class TaxiStats {
         this.totalWaitTimeMillis = 0L;
     }
     
-    /**
-     * Добавляет данные о завершенной поездке
-     */
     public synchronized void addRide(double distance, double revenue, 
                                    long rideTimeMillis, long waitTimeMillis) {
         this.completedRides++;
@@ -31,7 +26,7 @@ public class TaxiStats {
         this.totalWaitTimeMillis += waitTimeMillis;
     }
     
-    // Геттеры
+    // =========== Геттеры =============
     
     public synchronized int getCompletedRides() {
         return completedRides;
@@ -53,16 +48,10 @@ public class TaxiStats {
         return totalWaitTimeMillis;
     }
     
-    /**
-     * Получает среднее время поездки
-     */
     public synchronized double getAverageRideTimeSeconds() {
         return completedRides > 0 ? totalRideTimeMillis / (completedRides * 1000.0) : 0.0;
     }
     
-    /**
-     * Получает среднее время ожидания
-     */
     public synchronized double getAverageWaitTimeSeconds() {
         return completedRides > 0 ? totalWaitTimeMillis / (completedRides * 1000.0) : 0.0;
     }

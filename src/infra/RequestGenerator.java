@@ -5,32 +5,21 @@ import models.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.Random;
 
-/**
- * Генератор заявок на поездки
- */
+
 public class RequestGenerator implements Runnable {
-    
-    // Поля класса
     private final BlockingQueue<RideRequest> requestQueue;
     private final SimulationConfig config;
     private final Random random;
     private volatile boolean running = true;
     
-    // Poison pill для остановки диспетчера
     public static final RideRequest DISPATCHER_POISON_PILL = RideRequest.createPoisonPill();
     
-    /**
-     * Конструктор генератора
-     */
     public RequestGenerator(BlockingQueue<RideRequest> requestQueue, SimulationConfig config) {
         this.requestQueue = requestQueue;
         this.config = config;
         this.random = new Random();
     }
     
-    /**
-     * Основной метод потока генератора
-     */
     @Override
     public void run() {
         System.out.println("Генератор запросов запущен. Интервал: " + 
@@ -62,9 +51,6 @@ public class RequestGenerator implements Runnable {
         }
     }
     
-    /**
-     * Генерирует случайный заказ на поездку
-     */
     private RideRequest generateRequest() {
         // Генерируем случайные точки в пределах города
         Point pickup = generateRandomPoint();
@@ -79,13 +65,10 @@ public class RequestGenerator implements Runnable {
         TaxiType[] allTypes = TaxiType.values();
         TaxiType requestedType = allTypes[random.nextInt(allTypes.length)];
         
-        // Создаем заказ (ID генерируется автоматически в конструкторе)
+        // Создаем заказ 
         return new RideRequest(pickup, dropoff, requestedType);
     }
     
-    /**
-     * Генерирует случайную точку в пределах города
-     */
     private Point generateRandomPoint() {
         double x = config.getCityMinX() + 
                   random.nextDouble() * (config.getCityMaxX() - config.getCityMinX());
@@ -94,18 +77,11 @@ public class RequestGenerator implements Runnable {
         return new Point(x, y);
     }
     
-    /**
-     * Получает следующий интервал с некоторой случайностью
-     */
     private long getNextInterval() {
-        // Добавляем некоторую случайность к интервалу (±50%)
         return (long)(config.getMeanRequestIntervalMillis() * 
                     (0.5 + random.nextDouble()));
     }
     
-    /**
-     * Отправляет poison pill в очередь для остановки диспетчера
-     */
     private void sendPoisonPill() {
         try {
             requestQueue.put(DISPATCHER_POISON_PILL);
@@ -115,16 +91,10 @@ public class RequestGenerator implements Runnable {
         }
     }
     
-    /**
-     * Остановка генератора
-     */
     public void stop() {
         this.running = false;
     }
-    
-    /**
-     * Проверка, работает ли генератор
-     */
+
     public boolean isRunning() {
         return running;
     }

@@ -1,9 +1,6 @@
 package models;
 
-/**
- * Снимок состояния такси для статистики и мониторинга.
- * Неизменяемый класс для безопасного использования в многопоточной среде.
- */
+
 public class TaxiSnapshot {
     private final long taxiId;
     private final Point currentLocation;
@@ -25,7 +22,7 @@ public class TaxiSnapshot {
         this.totalRevenue = totalRevenue;
     }
 
-    // Геттеры
+    // =============== Геттеры ================
     public long getTaxiId() {
         return taxiId;
     }

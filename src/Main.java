@@ -4,9 +4,7 @@ import infra.StrategyType;
 
 import java.util.Scanner;
 
-/**
- * Основной класс для запуска симуляции
- */
+
 public class Main {
     
     public static void main(String[] args) {
@@ -38,19 +36,16 @@ public class Main {
             System.out.println("    СИМУЛЯЦИЯ УСПЕШНО ЗАВЕРШЕНА");
             System.out.println("=".repeat(60));
             
-        } catch (Exception e) { // Изменено: ловим Exception вместо InterruptedException
+        } catch (Exception e) { 
             System.err.println("\nОшибка при выполнении симуляции: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } finally {
-            // Закрываем Scanner только здесь
             scanner.close();
         }
     }
     
-    /**
-     * Читает конфигурацию из аргументов или запрашивает у пользователя
-     */
+
     private static SimulationConfig readConfiguration(String[] args, Scanner scanner) {
         // Если есть аргументы командной строки, используем их
         if (args.length >= 4) {
@@ -80,31 +75,24 @@ public class Main {
             }
         }
         
-        // Интерактивный ввод
         return readInteractiveConfiguration(scanner);
     }
     
-    /**
-     * Читает конфигурацию в интерактивном режиме
-     */
+ 
     private static SimulationConfig readInteractiveConfiguration(Scanner scanner) {
         System.out.println("\nНАСТРОЙКА СИМУЛЯЦИИ");
         System.out.println("Введите параметры (или нажмите Enter для значений по умолчанию):");
         
-        // Количество такси
         int numberOfTaxis = readIntInput(scanner, 
             "Количество такси [5]: ", 5, 1, 50);
         
-        // Длительность симуляции
         int durationSeconds = readIntInput(scanner,
             "Длительность симуляции (секунд) [30]: ", 30, 5, 300);
         
-        // Интервал между запросами
         long requestIntervalMillis = readLongInput(scanner,
             "Средний интервал между заказами (миллисекунд) [2000]: ", 
             2000L, 500L, 10000L);
         
-        // Стратегия
         StrategyType strategyType = readStrategyInput(scanner,
             "Стратегия распределения (nearest/leastloaded) [nearest]: ");
         
@@ -116,9 +104,7 @@ public class Main {
         );
     }
     
-    /**
-     * Читает целочисленный ввод с валидацией
-     */
+
     private static int readIntInput(Scanner scanner, String prompt, 
                                    int defaultValue, int min, int max) {
         while (true) {
@@ -142,9 +128,7 @@ public class Main {
         }
     }
     
-    /**
-     * Читает long ввод с валидацией
-     */
+
     private static long readLongInput(Scanner scanner, String prompt,
                                      long defaultValue, long min, long max) {
         while (true) {
@@ -168,9 +152,7 @@ public class Main {
         }
     }
     
-    /**
-     * Читает ввод стратегии
-     */
+
     private static StrategyType readStrategyInput(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -188,9 +170,7 @@ public class Main {
         }
     }
     
-    /**
-     * Выводит информацию о конфигурации
-     */
+
     private static void printConfigurationInfo(SimulationConfig config) {
         System.out.println("\n" + "-".repeat(60));
         System.out.println("НАСТРОЙКИ СИМУЛЯЦИИ:");
@@ -205,9 +185,7 @@ public class Main {
         System.out.println("-".repeat(60));
     }
     
-    /**
-     * Запрашивает подтверждение запуска
-     */
+
     private static boolean confirmStart(Scanner scanner) {
         System.out.print("\nЗапустить симуляцию? (y/n) [y]: ");
         String input = scanner.nextLine().trim().toLowerCase();

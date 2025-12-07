@@ -8,9 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Сборщик статистики по всей симуляции
- */
+
 public class StatisticsCollector {
     
     // Агрегированная статистика
@@ -26,9 +24,7 @@ public class StatisticsCollector {
     // Статистика по каждому такси (ключ - ID такси)
     private final Map<Long, TaxiStats> taxiStatistics = new ConcurrentHashMap<>();
     
-    /**
-     * Записывает данные о завершенной поездке
-     */
+
     public void recordCompletedRide(long taxiId, TaxiType taxiType,
                                    double distance, double revenue,
                                    long rideTimeMillis, long waitTimeMillis) {
@@ -51,7 +47,7 @@ public class StatisticsCollector {
                      .addRide(distance, revenue, rideTimeMillis, waitTimeMillis);
     }
     
-    // Методы для получения статистики
+    // ================ Геттеры =============
     
     public int getTotalCompletedRides() {
         return totalCompletedRides.get();
@@ -73,69 +69,44 @@ public class StatisticsCollector {
         return totalWaitTimeMillis.get();
     }
     
-    /**
-     * Получает среднее время ожидания в секундах
-     */
     public double getAverageWaitTimeSeconds() {
         int rides = totalCompletedRides.get();
         return rides > 0 ? totalWaitTimeMillis.get() / (rides * 1000.0) : 0.0;
     }
     
-    /**
-     * Получает среднее время поездки в секундах
-     */
     public double getAverageRideTimeSeconds() {
         int rides = totalCompletedRides.get();
         return rides > 0 ? totalRideTimeMillis.get() / (rides * 1000.0) : 0.0;
     }
-    
-    /**
-     * Получает среднее расстояние поездки
-     */
+
     public double getAverageDistance() {
         int rides = totalCompletedRides.get();
         return rides > 0 ? totalDistance.get() / rides : 0.0;
     }
     
-    /**
-     * Получает среднюю стоимость поездки
-     */
     public double getAverageFare() {
         int rides = totalCompletedRides.get();
         return rides > 0 ? totalRevenue.get() / rides : 0.0;
     }
     
-    /**
-     * Получает статистику по конкретному такси
-     */
     public TaxiStats getTaxiStats(long taxiId) {
         return taxiStatistics.get(taxiId);
     }
     
-    /**
-     * Получает статистику по типу такси
-     */
     public TaxiTypeStats getStatsByTaxiType(TaxiType type) {
         return statsByTaxiType.get(type);
     }
     
-    /**
-     * Получает все статистики по такси
-     */
     public Map<Long, TaxiStats> getAllTaxiStats() {
         return taxiStatistics;
     }
     
-    /**
-     * Получает все статистики по типам такси
-     */
     public Map<TaxiType, TaxiTypeStats> getAllTaxiTypeStats() {
         return statsByTaxiType;
     }
-    
-    /**
-     * Выводит полный отчет по статистике
-     */
+
+
+
     public void printSummary() {
         System.out.println("\n" + "=".repeat(60));
         System.out.println("ОТЧЕТ ПО СТАТИСТИКЕ СИМУЛЯЦИИ");
@@ -179,10 +150,6 @@ public class StatisticsCollector {
         System.out.println("=".repeat(60));
     }
     
-    /**
-     * Вспомогательный метод для получения типа такси по ID
-     * (В реальной реализации нужно передавать информацию о типе такси)
-     */
     private String getTaxiTypeForId(long taxiId) {
         // Временная заглушка
         return "UNKNOWN";

@@ -9,12 +9,9 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Диспетчер, распределяющий заказы между такси
- */
+
 public class Dispatcher implements Runnable, DispatcherCallback {
     
-    // Поля класса
     private final BlockingQueue<RideRequest> requestQueue;
     private final List<TaxiWorker> taxis;
     private final DispatchStrategy strategy;
@@ -24,10 +21,7 @@ public class Dispatcher implements Runnable, DispatcherCallback {
     
     private int totalAssignedRides = 0;
     private int failedAssignments = 0;
-    
-    /**
-     * Конструктор диспетчера
-     */
+ 
     public Dispatcher(BlockingQueue<RideRequest> requestQueue, 
                      List<TaxiWorker> taxis, 
                      DispatchStrategy strategy,
@@ -38,10 +32,7 @@ public class Dispatcher implements Runnable, DispatcherCallback {
         this.selectionLock = new ReentrantLock();
         this.statisticsCollector = statisticsCollector;
     }
-    
-    /**
-     * Основной метод потока диспетчера
-     */
+
     @Override
     public void run() {
         System.out.println("Диспетчер запущен. Стратегия: " + strategy.getName());
@@ -94,10 +85,8 @@ public class Dispatcher implements Runnable, DispatcherCallback {
         System.out.println("Диспетчер остановлен. Назначено поездок: " + 
                          totalAssignedRides + ", не удалось назначить: " + failedAssignments);
     }
+
     
-    /**
-     * Выбирает такси для заказа с использованием стратегии
-     */
     private TaxiWorker selectTaxiForRequest(RideRequest request) {
         selectionLock.lock();
         try {
@@ -107,16 +96,10 @@ public class Dispatcher implements Runnable, DispatcherCallback {
         }
     }
     
-    /**
-     * Проверяет, является ли запрос poison pill'ом
-     */
     private boolean isPoisonPill(RideRequest request) {
         return request.getId() == -1; // ID poison pill
     }
     
-    /**
-     * Останавливает все такси
-     */
     private void stopAllTaxis() {
         System.out.println("Диспетчер останавливает все такси...");
         for (TaxiWorker taxi : taxis) {
@@ -124,18 +107,11 @@ public class Dispatcher implements Runnable, DispatcherCallback {
         }
     }
     
-    /**
-     * Остановка работы диспетчера
-     */
     public void stop() {
         this.running = false;
-        // Прерываем ожидание в очереди
         Thread.currentThread().interrupt();
     }
-    
-    /**
-     * Обратный вызов при завершении поездки
-     */
+
     @Override
     public void onRideCompleted(TaxiWorker taxi, RideRequest ride, 
                                double distance, double fare, long waitTimeMillis) {
@@ -167,7 +143,7 @@ public class Dispatcher implements Runnable, DispatcherCallback {
                          waitTimeMillis, rideTimeMillis);
     }
     
-    // Геттеры
+    // =============== Геттеры ===================
     
     public List<TaxiWorker> getTaxis() {
         return taxis;

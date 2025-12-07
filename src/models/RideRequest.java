@@ -2,9 +2,7 @@ package models;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Запрос на поездку от клиента.
- */
+
 public class RideRequest {
     private static final AtomicLong idGenerator = new AtomicLong(1);
     
@@ -14,7 +12,7 @@ public class RideRequest {
     private final long createdAtMillis;
     private final TaxiType requestedType;
     private volatile RideStatus status;
-    private Long assignedTaxiId; // ID такси, которому назначен заказ
+    private Long assignedTaxiId; 
     
     public RideRequest(Point pickupLocation, Point dropoffLocation, TaxiType requestedType) {
         this.id = idGenerator.getAndIncrement();
@@ -26,7 +24,6 @@ public class RideRequest {
         this.assignedTaxiId = null;
     }
     
-    // Перегруженный конструктор для заказов без указания типа (по умолчанию ECONOMY)
     public RideRequest(Point pickupLocation, Point dropoffLocation) {
         this(pickupLocation, dropoffLocation, TaxiType.ECONOMY);
     }
@@ -43,7 +40,7 @@ public class RideRequest {
         }
     }
 
-    // Геттеры
+    // =========== Геттеры ============
     public long getId() {
         return id;
     }
@@ -72,7 +69,7 @@ public class RideRequest {
         return assignedTaxiId;
     }
 
-    // Сеттеры (только для статуса и assignedTaxiId)
+    // ========= Сеттеры ===========
     public void setStatus(RideStatus status) {
         this.status = status;
     }
@@ -81,31 +78,16 @@ public class RideRequest {
         this.assignedTaxiId = assignedTaxiId;
     }
 
-    /**
-     * Рассчитывает расстояние поездки.
-     * 
-     * @return расстояние в километрах
-     */
+
     public double calculateDistance() {
         return pickupLocation.distanceTo(dropoffLocation);
     }
 
-    /**
-     * Рассчитывает ориентировочную стоимость поездки.
-     * 
-     * @return стоимость в рублях
-     */
     public double calculateEstimatedFare() {
         double distance = calculateDistance();
         return requestedType.calculateFare(distance);
     }
 
-    /**
-     * Рассчитывает время ожидания.
-     * 
-     * @param assignmentTimeMillis время назначения такси
-     * @return время ожидания в миллисекундах
-     */
     public long calculateWaitTime(long assignmentTimeMillis) {
         return assignmentTimeMillis - createdAtMillis;
     }
