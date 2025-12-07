@@ -14,15 +14,18 @@ public class Main {
         System.out.println("    СИСТЕМА УПРАВЛЕНИЯ БЕСПИЛОТНЫМИ ТАКСИ");
         System.out.println("=".repeat(60));
         
+        // Создаем единый Scanner для всего ввода
+        Scanner scanner = new Scanner(System.in);
+        
         try {
             // Чтение конфигурации
-            SimulationConfig config = readConfiguration(args);
+            SimulationConfig config = readConfiguration(args, scanner);
             
             // Вывод информации о конфигурации
             printConfigurationInfo(config);
             
             // Подтверждение запуска
-            if (!confirmStart()) {
+            if (!confirmStart(scanner)) {
                 System.out.println("Симуляция отменена пользователем.");
                 return;
             }
@@ -39,13 +42,16 @@ public class Main {
             System.err.println("\nОшибка при выполнении симуляции: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
+        } finally {
+            // Закрываем Scanner только здесь
+            scanner.close();
         }
     }
     
     /**
      * Читает конфигурацию из аргументов или запрашивает у пользователя
      */
-    private static SimulationConfig readConfiguration(String[] args) {
+    private static SimulationConfig readConfiguration(String[] args, Scanner scanner) {
         // Если есть аргументы командной строки, используем их
         if (args.length >= 4) {
             try {
@@ -75,41 +81,39 @@ public class Main {
         }
         
         // Интерактивный ввод
-        return readInteractiveConfiguration();
+        return readInteractiveConfiguration(scanner);
     }
     
     /**
      * Читает конфигурацию в интерактивном режиме
      */
-    private static SimulationConfig readInteractiveConfiguration() {
+    private static SimulationConfig readInteractiveConfiguration(Scanner scanner) {
         System.out.println("\nНАСТРОЙКА СИМУЛЯЦИИ");
         System.out.println("Введите параметры (или нажмите Enter для значений по умолчанию):");
         
-        try (Scanner scanner = new Scanner(System.in)) {
-            // Количество такси
-            int numberOfTaxis = readIntInput(scanner, 
-                "Количество такси [5]: ", 5, 1, 50);
-            
-            // Длительность симуляции
-            int durationSeconds = readIntInput(scanner,
-                "Длительность симуляции (секунд) [30]: ", 30, 5, 300);
-            
-            // Интервал между запросами
-            long requestIntervalMillis = readLongInput(scanner,
-                "Средний интервал между заказами (миллисекунд) [2000]: ", 
-                2000L, 500L, 10000L);
-            
-            // Стратегия
-            StrategyType strategyType = readStrategyInput(scanner,
-                "Стратегия распределения (nearest/leastloaded) [nearest]: ");
-            
-            return new SimulationConfig(
-                numberOfTaxis,
-                durationSeconds,
-                requestIntervalMillis,
-                strategyType
-            );
-        }
+        // Количество такси
+        int numberOfTaxis = readIntInput(scanner, 
+            "Количество такси [5]: ", 5, 1, 50);
+        
+        // Длительность симуляции
+        int durationSeconds = readIntInput(scanner,
+            "Длительность симуляции (секунд) [30]: ", 30, 5, 300);
+        
+        // Интервал между запросами
+        long requestIntervalMillis = readLongInput(scanner,
+            "Средний интервал между заказами (миллисекунд) [2000]: ", 
+            2000L, 500L, 10000L);
+        
+        // Стратегия
+        StrategyType strategyType = readStrategyInput(scanner,
+            "Стратегия распределения (nearest/leastloaded) [nearest]: ");
+        
+        return new SimulationConfig(
+            numberOfTaxis,
+            durationSeconds,
+            requestIntervalMillis,
+            strategyType
+        );
     }
     
     /**
@@ -184,6 +188,9 @@ public class Main {
         }
     }
     
+    /**
+     * Выводит информацию о конфигурации
+     */
     private static void printConfigurationInfo(SimulationConfig config) {
         System.out.println("\n" + "-".repeat(60));
         System.out.println("НАСТРОЙКИ СИМУЛЯЦИИ:");
@@ -201,12 +208,10 @@ public class Main {
     /**
      * Запрашивает подтверждение запуска
      */
-    private static boolean confirmStart() {
-        try (Scanner scanner = new Scanner(System.in)) {
-            System.out.print("\nЗапустить симуляцию? (y/n) [y]: ");
-            String input = scanner.nextLine().trim().toLowerCase();
-            
-            return input.isEmpty() || input.equals("y") || input.equals("да");
-        }
+    private static boolean confirmStart(Scanner scanner) {
+        System.out.print("\nЗапустить симуляцию? (y/n) [y]: ");
+        String input = scanner.nextLine().trim().toLowerCase();
+        
+        return input.isEmpty() || input.equals("y") || input.equals("да");
     }
 }
