@@ -1,6 +1,6 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.RideRequest;
+import models.RideRequest;
 
 import java.util.List;
 

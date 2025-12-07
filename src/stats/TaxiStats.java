@@ -1,4 +1,4 @@
-package ru.mystudent.taxi.stats;
+package stats;
 
 /**
  * Статистика по одному такси

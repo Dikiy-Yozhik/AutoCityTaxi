@@ -1,8 +1,6 @@
-package ru.mystudent.taxi.app;
-
-import ru.mystudent.taxi.infra.SimulationConfig;
-import ru.mystudent.taxi.infra.SimulationRunner;
-import ru.mystudent.taxi.infra.StrategyType;
+import infra.SimulationConfig;
+import infra.SimulationRunner;
+import infra.StrategyType;
 
 import java.util.Scanner;
 
@@ -37,10 +35,7 @@ public class Main {
             System.out.println("    СИМУЛЯЦИЯ УСПЕШНО ЗАВЕРШЕНА");
             System.out.println("=".repeat(60));
             
-        } catch (InterruptedException e) {
-            System.err.println("\nСимуляция была прервана пользователем");
-            Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Exception e) { // Изменено: ловим Exception вместо InterruptedException
             System.err.println("\nОшибка при выполнении симуляции: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
@@ -189,9 +184,6 @@ public class Main {
         }
     }
     
-    /**
-     * Выводит информацию о конфигурации
-     */
     private static void printConfigurationInfo(SimulationConfig config) {
         System.out.println("\n" + "-".repeat(60));
         System.out.println("НАСТРОЙКИ СИМУЛЯЦИИ:");

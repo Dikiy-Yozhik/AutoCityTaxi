@@ -1,24 +1,24 @@
-package ru.mystudent.taxi.stats;
+package stats;
 
-import ru.mystudent.taxi.model.TaxiType;
+import models.TaxiType;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicDouble;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Сборщик статистики по всей симуляции
  */
 public class StatisticsCollector {
     
-    // Агрегированная статистика (используем атомарные типы для потокобезопасности)
+    // Агрегированная статистика
     private final AtomicInteger totalCompletedRides = new AtomicInteger(0);
     private final AtomicLong totalWaitTimeMillis = new AtomicLong(0L);
     private final AtomicLong totalRideTimeMillis = new AtomicLong(0L);
-    private final AtomicDouble totalDistance = new AtomicDouble(0.0);
-    private final AtomicDouble totalRevenue = new AtomicDouble(0.0);
+    private final AtomicReference<Double> totalDistance = new AtomicReference<>(0.0);
+    private final AtomicReference<Double> totalRevenue = new AtomicReference<>(0.0);
     
     // Статистика по типам такси
     private final Map<TaxiType, TaxiTypeStats> statsByTaxiType = new ConcurrentHashMap<>();
@@ -34,8 +34,11 @@ public class StatisticsCollector {
                                    long rideTimeMillis, long waitTimeMillis) {
         // Обновляем общую статистику
         totalCompletedRides.incrementAndGet();
-        totalDistance.addAndGet(distance);
-        totalRevenue.addAndGet(revenue);
+        
+        // Атомарно обновляем double значения
+        totalDistance.updateAndGet(current -> current + distance);
+        totalRevenue.updateAndGet(current -> current + revenue);
+        
         totalRideTimeMillis.addAndGet(rideTimeMillis);
         totalWaitTimeMillis.addAndGet(waitTimeMillis);
         
@@ -165,7 +168,7 @@ public class StatisticsCollector {
                 TaxiStats stats = entry.getValue();
                 System.out.printf("%-3d | %-9s | %-7d | %-8.2f | %-8.2f | %-11.1fс | %-10.1fс%n",
                     entry.getKey(),
-                    getTaxiTypeForId(entry.getKey()),
+                    getTaxiTypeForId(entry.getKey()), // Временный заглушка
                     stats.getCompletedRides(),
                     stats.getTotalDistance(),
                     stats.getTotalRevenue(),
@@ -181,7 +184,7 @@ public class StatisticsCollector {
      * (В реальной реализации нужно передавать информацию о типе такси)
      */
     private String getTaxiTypeForId(long taxiId) {
-        // Временная заглушка - в реальном коде нужно хранить информацию о типах такси
+        // Временная заглушка
         return "UNKNOWN";
     }
 }

@@ -1,7 +1,7 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.RideRequest;
-import ru.mystudent.taxi.model.TaxiStatus;
+import models.RideRequest;
+import models.TaxiStatus;
 
 import java.util.List;
 
@@ -42,9 +42,9 @@ public class LeastLoadedTaxiStrategy implements DispatchStrategy {
             // Если загрузка одинаковая, выбираем ближайшее (опциональное улучшение)
             else if (completedRides == minCompletedRides) {
                 double currentDistance = leastLoadedTaxi.getCurrentLocation()
-                    .distanceTo(request.getPickup());
+                    .distanceTo(request.getPickupLocation());
                 double newDistance = taxi.getCurrentLocation()
-                    .distanceTo(request.getPickup());
+                    .distanceTo(request.getPickupLocation());
                 
                 if (newDistance < currentDistance) {
                     leastLoadedTaxi = taxi;

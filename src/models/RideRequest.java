@@ -1,4 +1,4 @@
-package ru.mystudent.taxi.model;
+package models;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,6 +29,18 @@ public class RideRequest {
     // Перегруженный конструктор для заказов без указания типа (по умолчанию ECONOMY)
     public RideRequest(Point pickupLocation, Point dropoffLocation) {
         this(pickupLocation, dropoffLocation, TaxiType.ECONOMY);
+    }
+
+    public static RideRequest createPoisonPill() {
+        try {
+            RideRequest pill = new RideRequest(new Point(0, 0), new Point(0, 0), null);
+            java.lang.reflect.Field idField = RideRequest.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(pill, -1L);
+            return pill;
+        } catch (Exception e) {
+            throw new RuntimeException("Не удалось создать poison pill", e);
+        }
     }
 
     // Геттеры

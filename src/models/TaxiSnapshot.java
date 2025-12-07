@@ -1,4 +1,4 @@
-package ru.mystudent.taxi.model;
+package models;
 
 /**
  * Снимок состояния такси для статистики и мониторинга.

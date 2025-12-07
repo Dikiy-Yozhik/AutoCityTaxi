@@ -1,7 +1,7 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.RideRequest;
-import ru.mystudent.taxi.model.TaxiStatus;
+import models.RideRequest;
+import models.TaxiStatus;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class NearestTaxiStrategy implements DispatchStrategy {
             }
             
             // Вычисляем расстояние от такси до точки посадки
-            double distance = taxi.getCurrentLocation().distanceTo(request.getPickup());
+            double distance = taxi.getCurrentLocation().distanceTo(request.getPickupLocation());
             
             if (distance < minDistance) {
                 minDistance = distance;

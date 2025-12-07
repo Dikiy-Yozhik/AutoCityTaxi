@@ -1,6 +1,6 @@
-package ru.mystudent.taxi.util;
+package util;
 
-import ru.mystudent.taxi.model.TaxiType;
+import models.TaxiType;
 
 /**
  * Калькулятор стоимости поездки

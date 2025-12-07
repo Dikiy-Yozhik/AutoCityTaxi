@@ -1,4 +1,4 @@
-package ru.mystudent.taxi.model;
+package models;
 
 /**
  * Статусы такси.

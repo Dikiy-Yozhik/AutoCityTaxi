@@ -1,9 +1,9 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.RideRequest;
-import ru.mystudent.taxi.model.TaxiStatus;
-import ru.mystudent.taxi.stats.StatisticsCollector;
-import ru.mystudent.taxi.util.FareCalculator;
+import models.RideRequest;
+import models.TaxiStatus;
+import stats.StatisticsCollector;
+import util.FareCalculator;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;

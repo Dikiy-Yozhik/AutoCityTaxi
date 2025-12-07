@@ -1,6 +1,7 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.*;
+import models.*;
+import util.FareCalculator;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -98,10 +99,10 @@ public class TaxiWorker implements Runnable {
             
             // 1. Едем к клиенту
             System.out.println("Такси " + id + " едет к клиенту #" + request.getId() + 
-                            " из " + currentLocation + " в " + request.getPickup() +
+                            " из " + currentLocation + " в " + request.getPickupLocation() +
                             " (ожидание: " + waitTimeMillis + " мс)");
             
-            double distanceToPickup = currentLocation.distanceTo(request.getPickup());
+            double distanceToPickup = currentLocation.distanceTo(request.getPickupLocation());
             setStatus(TaxiStatus.TO_PICKUP);
             
             // Имитируем поездку к клиенту
@@ -110,20 +111,20 @@ public class TaxiWorker implements Runnable {
             
             // 2. Клиент сел в такси
             System.out.println("Такси " + id + " забрало клиента #" + request.getId());
-            currentLocation = request.getPickup();
+            currentLocation = request.getPickupLocation();
             setStatus(TaxiStatus.WITH_PASSENGER);
             
             // 3. Едем к точке назначения
             System.out.println("Такси " + id + " везет клиента #" + request.getId() + 
-                            " из " + currentLocation + " в " + request.getDropoff());
+                            " из " + currentLocation + " в " + request.getDropoffLocation());
             
-            double rideDistance = request.getPickup().distanceTo(request.getDropoff());
+            double rideDistance = request.getPickupLocation().distanceTo(request.getDropoffLocation());
             long rideTime = calculateTravelTime(rideDistance);
             Thread.sleep(rideTime);
             
             // 4. Завершаем поездку
             System.out.println("Такси " + id + " доставило клиента #" + request.getId());
-            currentLocation = request.getDropoff();
+            currentLocation = request.getDropoffLocation();
             setStatus(TaxiStatus.IDLE);
             
             // Обновляем статистику
@@ -173,11 +174,7 @@ public class TaxiWorker implements Runnable {
      * Создает poison pill для graceful shutdown
      */
     private static RideRequest createPoisonPill() {
-        return new RideRequest(-1, 
-            new Point(0, 0), 
-            new Point(0, 0), 
-            System.currentTimeMillis(), 
-            null); // null для TaxiType
+        return RideRequest.createPoisonPill();
     }
     
     // Геттеры и сеттеры (остаются без изменений)

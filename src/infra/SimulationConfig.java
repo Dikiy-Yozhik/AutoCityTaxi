@@ -1,4 +1,4 @@
-package ru.mystudent.taxi.infra;
+package infra;
 
 /**
  * Конфигурация симуляции

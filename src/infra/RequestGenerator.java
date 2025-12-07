@@ -1,9 +1,8 @@
-package ru.mystudent.taxi.infra;
+package infra;
 
-import ru.mystudent.taxi.model.*;
+import models.*;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.Random;
 
 /**
@@ -14,13 +13,11 @@ public class RequestGenerator implements Runnable {
     // Поля класса
     private final BlockingQueue<RideRequest> requestQueue;
     private final SimulationConfig config;
-    private final AtomicLong requestIdCounter;
     private final Random random;
     private volatile boolean running = true;
     
     // Poison pill для остановки диспетчера
-    public static final RideRequest DISPATCHER_POISON_PILL = 
-        new RideRequest(-1, null, null, 0, null);
+    public static final RideRequest DISPATCHER_POISON_PILL = RideRequest.createPoisonPill();
     
     /**
      * Конструктор генератора
@@ -28,7 +25,6 @@ public class RequestGenerator implements Runnable {
     public RequestGenerator(BlockingQueue<RideRequest> requestQueue, SimulationConfig config) {
         this.requestQueue = requestQueue;
         this.config = config;
-        this.requestIdCounter = new AtomicLong(1);
         this.random = new Random();
     }
     
@@ -48,8 +44,8 @@ public class RequestGenerator implements Runnable {
                 // Помещаем в очередь
                 requestQueue.put(request);
                 System.out.println("Сгенерирован заказ #" + request.getId() + 
-                                 " от " + request.getPickup() + 
-                                 " до " + request.getDropoff() +
+                                 " от " + request.getPickupLocation() + 
+                                 " до " + request.getDropoffLocation() +
                                  " (тип: " + request.getRequestedType() + ")");
                 
                 // Ждем перед генерацией следующего заказа
@@ -70,8 +66,6 @@ public class RequestGenerator implements Runnable {
      * Генерирует случайный заказ на поездку
      */
     private RideRequest generateRequest() {
-        long id = requestIdCounter.getAndIncrement();
-        
         // Генерируем случайные точки в пределах города
         Point pickup = generateRandomPoint();
         Point dropoff = generateRandomPoint();
@@ -85,7 +79,8 @@ public class RequestGenerator implements Runnable {
         TaxiType[] allTypes = TaxiType.values();
         TaxiType requestedType = allTypes[random.nextInt(allTypes.length)];
         
-        return new RideRequest(id, pickup, dropoff, System.currentTimeMillis(), requestedType);
+        // Создаем заказ (ID генерируется автоматически в конструкторе)
+        return new RideRequest(pickup, dropoff, requestedType);
     }
     
     /**

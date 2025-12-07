@@ -1,8 +1,8 @@
-package ru.mystudent.taxi.infra;
+package infra;
 
-import ru.mystudent.taxi.service.*;
-import ru.mystudent.taxi.model.*;
-import ru.mystudent.taxi.stats.*;
+import services.*;
+import models.*;
+import stats.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -161,13 +161,5 @@ public class SimulationRunner {
                                  "'. Используется NearestTaxiStrategy по умолчанию.");
                 return new NearestTaxiStrategy();
         }
-    }
-    
-    /**
-     * Создает стратегию по названию (старая версия для обратной совместимости)
-     */
-    private DispatchStrategy createStrategy(String strategyName) {
-        StrategyType type = StrategyType.fromCode(strategyName);
-        return createStrategy(type);
     }
 }

@@ -1,6 +1,6 @@
-package ru.mystudent.taxi.service;
+package services;
 
-import ru.mystudent.taxi.model.RideRequest;
+import models.RideRequest;
 
 /**
  * Интерфейс обратного вызова для уведомлений от такси
