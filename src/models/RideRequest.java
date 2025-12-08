@@ -29,11 +29,21 @@ public class RideRequest {
     }
 
     public static RideRequest createPoisonPill() {
+        // 1. Получаем текущее значение счетчика (перед созданием)
+        long currentCounterValue = idGenerator.get();
+        
+        // 2. Создаем обычный RideRequest (увеличит счетчик на 1)
+        RideRequest pill = new RideRequest(new Point(0, 0), new Point(0, 0), null);
+        
         try {
-            RideRequest pill = new RideRequest(new Point(0, 0), new Point(0, 0), null);
+            // 3. Меняем ID на -1
             java.lang.reflect.Field idField = RideRequest.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(pill, -1L);
+            
+            // 4. ВОССТАНАВЛИВАЕМ счетчик на прежнее значение
+            idGenerator.set(currentCounterValue);
+            
             return pill;
         } catch (Exception e) {
             throw new RuntimeException("Не удалось создать poison pill", e);

@@ -17,6 +17,7 @@ public class StatisticsCollector {
     private final AtomicLong totalRideTimeMillis = new AtomicLong(0L);
     private final AtomicReference<Double> totalDistance = new AtomicReference<>(0.0);
     private final AtomicReference<Double> totalRevenue = new AtomicReference<>(0.0);
+    private final Map<Long, TaxiType> taxiIdToTypeMap = new ConcurrentHashMap<>();
     
     // Статистика по типам такси
     private final Map<TaxiType, TaxiTypeStats> statsByTaxiType = new ConcurrentHashMap<>();
@@ -27,17 +28,14 @@ public class StatisticsCollector {
 
     public void recordCompletedRide(long taxiId, TaxiType taxiType,
                                    double distance, double revenue,
-                                   long rideTimeMillis, long waitTimeMillis) {
+                                   long rideTimeMillis, long waitTimeMillis) {                           
         // Обновляем общую статистику
         totalCompletedRides.incrementAndGet();
-        
-        // Атомарно обновляем double значения
         totalDistance.updateAndGet(current -> current + distance);
         totalRevenue.updateAndGet(current -> current + revenue);
-        
         totalRideTimeMillis.addAndGet(rideTimeMillis);
         totalWaitTimeMillis.addAndGet(waitTimeMillis);
-        
+
         // Обновляем статистику по типу такси
         statsByTaxiType.computeIfAbsent(taxiType, k -> new TaxiTypeStats())
                       .addRide(distance, revenue, rideTimeMillis, waitTimeMillis);
@@ -45,6 +43,13 @@ public class StatisticsCollector {
         // Обновляем статистику по конкретному такси
         taxiStatistics.computeIfAbsent(taxiId, k -> new TaxiStats())
                      .addRide(distance, revenue, rideTimeMillis, waitTimeMillis);
+        
+        // Регистрируем тип такси (на случай, если registerTaxi не был вызван)
+        taxiIdToTypeMap.putIfAbsent(taxiId, taxiType);
+    }
+
+    public void registerTaxi(long taxiId, TaxiType taxiType) {
+        taxiIdToTypeMap.put(taxiId, taxiType);
     }
     
     // ================ Геттеры =============
@@ -70,8 +75,10 @@ public class StatisticsCollector {
     }
     
     public double getAverageWaitTimeSeconds() {
-        int rides = totalCompletedRides.get();
-        return rides > 0 ? totalWaitTimeMillis.get() / (rides * 1000.0) : 0.0;
+        long completed = totalCompletedRides.get();
+        long totalWait = totalWaitTimeMillis.get();
+        
+        return completed > 0 ? (double) totalWait / completed / 1000.0 : 0.0;
     }
     
     public double getAverageRideTimeSeconds() {
@@ -105,6 +112,13 @@ public class StatisticsCollector {
         return statsByTaxiType;
     }
 
+    private String getTaxiTypeName(long taxiId) {
+        TaxiType type = taxiIdToTypeMap.get(taxiId);
+        if (type == null) {
+            return "UNKNOWN";
+        }
+        return type.name(); 
+    }
 
 
     public void printSummary() {
@@ -117,7 +131,7 @@ public class StatisticsCollector {
         System.out.printf("Всего выполнено поездок: %d%n", getTotalCompletedRides());
         System.out.printf("Общий пробег: %.2f%n", getTotalDistance());
         System.out.printf("Общая выручка: %.2f%n", getTotalRevenue());
-        System.out.printf("Среднее время ожидания: %.1f сек%n", getAverageWaitTimeSeconds());
+        System.out.printf("Среднее время ожидания: %.3f сек%n", getAverageWaitTimeSeconds());
         System.out.printf("Среднее время поездки: %.1f сек%n", getAverageRideTimeSeconds());
         System.out.printf("Среднее расстояние: %.2f%n", getAverageDistance());
         System.out.printf("Средняя стоимость поездки: %.2f%n", getAverageFare());
@@ -136,10 +150,13 @@ public class StatisticsCollector {
         taxiStatistics.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
             .forEach(entry -> {
+                long taxiId = entry.getKey();
                 TaxiStats stats = entry.getValue();
-                System.out.printf("%-3d | %-9s | %-7d | %-8.2f | %-8.2f | %-11.1fс | %-10.1fс%n",
-                    entry.getKey(),
-                    getTaxiTypeForId(entry.getKey()), // Временный заглушка
+                String typeName = getTaxiTypeName(taxiId);
+                
+                System.out.printf("%-3d | %-9s | %-7d | %-8.2f | %-8.2f | %-11.3fс | %-10.1fс%n",
+                    taxiId,
+                    typeName,
                     stats.getCompletedRides(),
                     stats.getTotalDistance(),
                     stats.getTotalRevenue(),
@@ -148,10 +165,5 @@ public class StatisticsCollector {
             });
         
         System.out.println("=".repeat(60));
-    }
-    
-    private String getTaxiTypeForId(long taxiId) {
-        // Временная заглушка
-        return "UNKNOWN";
     }
 }

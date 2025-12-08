@@ -1,5 +1,6 @@
 package models;
 
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -45,6 +46,6 @@ public class Point {
 
     @Override
     public String toString() {
-        return String.format("(%.2f, %.2f)", x, y);
+        return String.format(Locale.US, "(%.2f, %.2f)", x, y);
     }
 }

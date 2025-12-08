@@ -48,66 +48,144 @@ public class SimulationRunner {
             System.out.println("- Интервал запросов: " + config.getMeanRequestIntervalMillis() + " мс");
             System.out.println();
             
-            // 2. Запускаем потоки
+            // 2. СОЗДАЕМ БАРЬЕР ДЛЯ СТАРТА
+            java.util.concurrent.CountDownLatch startSignal = new java.util.concurrent.CountDownLatch(1);
+            
+            // 3. Запускаем потоки
             executor = Executors.newFixedThreadPool(taxis.size() + 2);
             
             // Запускаем такси
             for (TaxiWorker taxi : taxis) {
-                executor.submit(taxi);
+                executor.submit(() -> {
+                    try {
+                        // Ждем команды старта
+                        startSignal.await();
+                        taxi.run();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
             }
             
-            // Запускаем диспетчера и генератор
-            executor.submit(dispatcher);
-            executor.submit(generator);
+            // Запускаем диспетчера
+            executor.submit(() -> {
+                try {
+                    startSignal.await();
+                    dispatcher.run();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
             
+            // Запускаем генератор
+            executor.submit(() -> {
+                try {
+                    startSignal.await();
+                    generator.run();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            
+            // 4. Даем команду "СТАРТ!" - ВСЕ потоки запускаются ОДНОВРЕМЕННО
             System.out.println("Все потоки запущены. Симуляция работает " + 
-                             config.getSimulationDurationSeconds() + " секунд...\n");
+                            config.getSimulationDurationSeconds() + " секунд...\n");
+            startSignal.countDown();
             
-            // 3. Ждем указанное время
-            TimeUnit.SECONDS.sleep(config.getSimulationDurationSeconds());
+            // 5. Ждем указанное время с проверкой прерывания
+            long startTime = System.currentTimeMillis();
+            long remainingTime = config.getSimulationDurationSeconds() * 1000L;
+            
+            while (remainingTime > 0 && !Thread.currentThread().isInterrupted()) {
+                long sleepTime = Math.min(remainingTime, 1000L); 
+                Thread.sleep(sleepTime);
+                remainingTime = config.getSimulationDurationSeconds() * 1000L - 
+                            (System.currentTimeMillis() - startTime);
+            }
+            
+            if (Thread.currentThread().isInterrupted()) {
+                System.out.println("\nСимуляция прервана пользователем.");
+                throw new InterruptedException("Прервано пользователем");
+            }
             
             System.out.println("\nВремя симуляции истекло. Начинаем остановку...");
             
+            // 6. ПРАВИЛЬНАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ ОСТАНОВКИ
+            System.out.println("1. Останавливаем генератор запросов...");
+            generator.stop();
+            
+            // Даем время генератору отправить poison pill
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
+            System.out.println("2. Даем диспетчеру время обработать оставшиеся заказы...");
+            // Ждем пока очередь диспетчера опустеет 
+            int maxWaitCycles = 50;
+            for (int i = 0; i < maxWaitCycles && !requestQueue.isEmpty(); i++) {
+                try {
+                    Thread.sleep(100);
+                    if (Thread.currentThread().isInterrupted()) break;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            
+            System.out.println("3. Останавливаем диспетчер...");
+            dispatcher.stop();
+            
+            System.out.println("4. Останавливаем такси...");
+            for (TaxiWorker taxi : taxis) {
+                taxi.stop();
+            }
+            
+            System.out.println("5. Ждем завершения текущих поездок (2 секунды)...");
+            // Даем такси время завершить текущие поездки
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
         } catch (InterruptedException e) {
-            System.err.println("Симуляция была прервана");
+            if (!"Прервано пользователем".equals(e.getMessage())) {
+                System.err.println("Симуляция была прервана");
+            }
             Thread.currentThread().interrupt();
         } finally {
-            // 4. Останавливаем все потоки
+            // 7. Останавливаем executor
             if (executor != null) {
                 shutdownExecutor(executor);
             }
             
-            // 5. Выводим статистику
+            // 8. Выводим статистику
             System.out.println("\n=== СИМУЛЯЦИЯ ЗАВЕРШЕНА ===");
             statisticsCollector.printSummary();
         }
     }
     
     private void shutdownExecutor(ExecutorService executor) {
+        System.out.println("Завершение работы всех потоков...");
+        
         try {
-            System.out.println("Запрашиваем завершение потоков...");
-            
-            // Запрещаем новые задачи
             executor.shutdown();
             
-            // Ждем завершения существующих задач
-            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-                System.err.println("Некоторые потоки не завершились вовремя. Принудительная остановка...");
+            if (!executor.awaitTermination(25, TimeUnit.SECONDS)) {
+                System.out.println("Некоторые потоки не завершились, применяем принудительную остановку...");
                 executor.shutdownNow();
                 
-                // Ждем еще немного
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    System.err.println("Потоки не реагируют на принудительную остановку");
-                }
+                executor.awaitTermination(5, TimeUnit.SECONDS);
             }
-            
-            System.out.println("Все потоки завершены корректно");
-            
         } catch (InterruptedException e) {
-            System.err.println("Остановка была прервана");
+            System.out.println("Процесс остановки был ускорен...");
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
+        
+        System.out.println("Все потоки остановлены.");
     }
 
     private List<TaxiWorker> createTaxis() {
@@ -125,7 +203,7 @@ public class SimulationRunner {
                       Math.random() * (config.getCityMaxY() - config.getCityMinY());
             
             Point startLocation = new Point(x, y);
-            TaxiWorker taxi = new TaxiWorker(taxiId, type, startLocation);
+            TaxiWorker taxi = new TaxiWorker(taxiId, type, startLocation, config.getTaxiSpeed());
             taxis.add(taxi);
         }
         

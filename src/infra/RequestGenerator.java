@@ -45,7 +45,6 @@ public class RequestGenerator implements Runnable {
             System.err.println("Генератор запросов был прерван");
             Thread.currentThread().interrupt();
         } finally {
-            // При завершении отправляем poison pill диспетчеру
             sendPoisonPill();
             System.out.println("Генератор запросов остановлен.");
         }
@@ -93,6 +92,7 @@ public class RequestGenerator implements Runnable {
     
     public void stop() {
         this.running = false;
+        Thread.currentThread().interrupt();
     }
 
     public boolean isRunning() {
